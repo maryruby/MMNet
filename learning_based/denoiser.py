@@ -1,5 +1,4 @@
-import tensorflow as tf 
-from utils import * 
+from utils import *
 
 class denoiser(object):
     def __init__(self, information):

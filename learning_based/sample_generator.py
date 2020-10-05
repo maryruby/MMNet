@@ -1,5 +1,3 @@
-import tensorflow as tf
-import numpy as np
 from utils import *
 
 class generator(object):
@@ -32,7 +30,7 @@ class generator(object):
     def QAM_N_const(self, n=None):
         if n==None:
             n = self.mod_n
-        constellation = np.linspace(-np.sqrt(n)+1, np.sqrt(n)-1, np.sqrt(n))
+        constellation = np.linspace(-np.sqrt(n)+1, np.sqrt(n)-1, int(np.sqrt(n)))
         alpha = np.sqrt((constellation ** 2).mean())
         constellation /= (alpha * np.sqrt(2))
         constellation = tf.Variable(constellation, trainable=False, dtype=tf.float32)

@@ -1,10 +1,4 @@
-import numpy as np
-import tensorflow as tf
-from tensorflow.python.ops import gen_math_ops
 import os
-#import matplotlib as mpl
-#mpl.use('Agg')
-import matplotlib.pyplot as pl
 from tf_session import *
 import pickle
 from parser import parse

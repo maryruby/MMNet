@@ -1,13 +1,8 @@
-import numpy as np
-import tensorflow as tf
-from tensorflow.python.ops import gen_math_ops
 import os
 import matplotlib as mpl
 mpl.use('Agg')
-import matplotlib.pyplot as plt
 from tf_session import *
 import argparse
-import pickle
 
 
 parser = argparse.ArgumentParser(description='MIMO signal detection simulator')

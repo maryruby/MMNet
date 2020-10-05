@@ -1,6 +1,4 @@
-import tensorflow as tf 
-import numpy as np 
-from utils import * 
+from utils import *
 
 class linear(object):
     def __init__(self, information):

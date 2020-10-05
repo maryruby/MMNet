@@ -1,4 +1,5 @@
-addpath('/data/Mehrdad/QuaDriGa_2017/quadriga_src')
+addpath('/Users/mary/Documents/MATLAB/QuaDriGa_2019.06.27_v2.2.0/quadriga_src')
+addpath('/Users/mary/Documents/MATLAB/QuaDriGa_2019.06.27_v2.2.0')
 more off
 close all
 clear all
@@ -54,10 +55,11 @@ for n=1:M_V
         l.tx_array.element_position(3,indeces) = (n)*antennaSpacing*lambda - lambda/4 - M_H/2*antennaSpacing*lambda + antennaHeight;
     end
 end
-
+% disp(K);
 % Users
 l.no_rx = K;                                            % Number of users
 l.rx_array = qd_arrayant( 'omni' );                     % Omnidirectional MT antenna
+% disp(l);
 
 % Update Map
 l.set_scenario('3GPP_3D_UMa_NLOS');
@@ -89,4 +91,4 @@ H_r = real(H);
 H_i = imag(H);
 
 clear H
-hdf5write('./channel_sequences.hdf5', 'H_r', H_r, 'H_i', H_i)
+hdf5write('/Users/mary/mimo/channel_sequences.hdf5', 'H_r', H_r, 'H_i', H_i)

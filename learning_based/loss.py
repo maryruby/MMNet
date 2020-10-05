@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from utils import batch_matvec_mul
 def loss_fun(xhat, x):
     loss = 0.

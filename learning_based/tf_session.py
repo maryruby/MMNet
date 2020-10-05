@@ -1,7 +1,6 @@
-import tensorflow as tf
 from utils import *
 from detector import detector
-from loss import loss_fun, loss_yhx
+from loss import loss_fun
 from sample_generator import generator
 
 class MMNet_graph():

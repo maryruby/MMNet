@@ -1,5 +1,9 @@
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+import h5py
+
 from tensorflow.python.ops import gen_math_ops
 import os
 from tf_session import *
@@ -13,6 +17,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 num_channel_samples = 100
 
+
 def complex_to_real(inp):
     Hr = np.real(inp)
     Hi = np.imag(inp)
@@ -21,24 +26,32 @@ def complex_to_real(inp):
     out = np.concatenate([h1, h2], axis=1)
     return out
 
+
+def complex_to_real_dataset(Hr, Hi):
+    h1 = np.concatenate([Hr, -Hi], axis=2)
+    h2 = np.concatenate([Hi,  Hr], axis=2)
+    out = np.concatenate([h1, h2], axis=1)
+    return out
+
+
 if args.data:
-    H_dataset = np.load(args.channels_dir)
-    assert H_dataset.shape[-1] == args.x_size
-    assert H_dataset.shape[-2] == args.y_size
+    with h5py.File(args.channels_dir, "r") as f:
+        #assert H_dataset.shape[-1] == args.x_size
+        #assert H_dataset.shape[-2] == args.y_size
 
-    H_dataset = np.reshape(H_dataset, (-1, H_dataset.shape[-2], H_dataset.shape[-1]))
-    H_dataset = complex_to_real(H_dataset)
-    Hdataset_powerdB = 10. * np.log(np.mean(np.sum(H_dataset ** 2, axis=1))) / np.log(10.) 
-    params['Hdataset_powerdB'] = Hdataset_powerdB
-    print('Channels dataset power (dB): %f'%Hdataset_powerdB)
+        # H_dataset = np.reshape(H_dataset, (-1, H_dataset.shape[-2], H_dataset.shape[-1]))
+        H_dataset = complex_to_real_dataset(f['H_r'].dataset(), f['H_i'].dataset())
+        Hdataset_powerdB = 10. * np.log(np.mean(np.sum(H_dataset ** 2, axis=1))) / np.log(10.)
+        params['Hdataset_powerdB'] = Hdataset_powerdB
+        print('Channels dataset power (dB): %f' % Hdataset_powerdB)
 
-    train_data_ref = H_dataset
-    test_data_ref = H_dataset
-    print('Channels dataset shape: ', H_dataset.shape)
-    rndIndx = np.random.randint(0, train_data_ref.shape[0], num_channel_samples)
-    train_data_ref = train_data_ref[rndIndx]
-    test_data_ref = test_data_ref[rndIndx]
-    print('Sampled channel indices: ', rndIndx)
+        train_data_ref = H_dataset
+        test_data_ref = H_dataset
+        print('Channels dataset shape: ', H_dataset.shape)
+        rndIndx = np.random.randint(0, train_data_ref.shape[0], num_channel_samples)
+        train_data_ref = train_data_ref[rndIndx]
+        test_data_ref = test_data_ref[rndIndx]
+        print('Sampled channel indices: ', rndIndx)
 
 else:
     test_data = []
