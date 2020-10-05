@@ -1,0 +1,5 @@
+.DS_Store
+.idea
+*.asv
+reports
+__pycache__

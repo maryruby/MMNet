@@ -9,9 +9,10 @@ def complex_to_real_dataset(Hr, Hi):
     return out
 
 
+# TODO: train and test are equal
 def read_channels_dataset(channels_dataset_file, num_channel_samples):
     with h5py.File(channels_dataset_file, "r") as input_f:
-        H_dataset = complex_to_real_dataset(input_f['H_r'].dataset(), input_f['H_i'].dataset())
+        H_dataset = complex_to_real_dataset(input_f['H_r'].value, input_f['H_i'].value)
         power_db = 10. * np.log(np.mean(np.sum(H_dataset ** 2, axis=1))) / np.log(10.)
         print('Channels dataset power (dB): %f' % power_db)
 

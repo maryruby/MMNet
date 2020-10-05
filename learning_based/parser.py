@@ -131,6 +131,11 @@ def parse():
                         action='store_true',
                         help='fetch covariance matrices')
 
+    parser.add_argument('--num-channel-samples',
+                        type=int,
+                        help='Number of channel samples',
+                        default=100)
+
     args = parser.parse_args()
 
     # Simulation parameters

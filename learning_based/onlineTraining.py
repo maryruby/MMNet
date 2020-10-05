@@ -8,15 +8,15 @@ import pickle
 from parser import parse
 from dataset import read_channels_dataset
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     params, args = parse()
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    num_channel_samples = 100
 
     if args.data:
-        train_data_ref, test_data_ref, power_db = read_channels_dataset(args.channels_dir, num_channel_samples)
+        train_data_ref, test_data_ref, power_db = read_channels_dataset(args.channels_dir, args.num_channel_samples)
         params['Hdataset_powerdB'] = power_db
     else:
         train_data_ref = []
@@ -45,20 +45,23 @@ if __name__ == "__main__":
     init = nodes['init']
 
     # Training loop
-    for r in range(num_channel_samples):
+    for r in range(args.num_channel_samples):
         sess.run(init)
         train_data = np.expand_dims(train_data_ref[r], axis=0)
         test_data = np.expand_dims(test_data_ref[r], axis=0)
         results = {}
         for it in range(args.train_iterations + 1):
+            print('ITERATION', it)
             feed_dict = {
                 batch_size: args.batch_size,
                 lr: args.learn_rate,
                 snr_db_max: params['SNR_dB_max'],
                 snr_db_min: params['SNR_dB_min'],
             }
+            print('Feed dict:', feed_dict)
             if args.data:
                 sample_ids = np.random.randint(0, np.shape(train_data)[0], params['batch_size'])
+                print('Train data shape:', train_data[sample_ids].shape)
                 feed_dict[H] = train_data[sample_ids]
 
             sess.run(train, feed_dict)
@@ -77,15 +80,14 @@ if __name__ == "__main__":
 
                     test_accuracy_, test_loss_, measured_snr_, log_ = sess.run([accuracy, loss, measured_snr, logs],
                                                                                feed_dict)
-                    print('Test SER of %f on channel realization %d after %d iterations at SNR %f dB' % (
-                    1. - test_accuracy_, r, it, measured_snr_))
+                    print('Test SER of %f on channel realization %d after %d iterations at SNR %f dB' % (1. - test_accuracy_, r, it, measured_snr_))
                     results[str(snr_)] = {}
                     for k in log_:
                         results[str(snr_)][k] = log_[k]['stat']
                     results[str(snr_)]['accuracy'] = test_accuracy_
                 results['cond'] = np.linalg.cond(test_data[sample_ids][0])
                 path = args.output_dir + '/OnlineTraining_%s_NT%sNR%s_%s/' % (
-                args.modulation, args.x_size, args.y_size, args.linear)
+                    args.modulation, args.x_size, args.y_size, args.linear)
                 if not os.path.exists(path):
                     os.makedirs(path)
                 savePath = path + 'results%d.pkl' % r
