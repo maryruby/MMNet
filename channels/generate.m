@@ -11,7 +11,7 @@ K = 32;                              % Number of users
 disp('32 users')
 centerFrequency = 2.53e9;            % Center frequency in Hz
 bandwidth = 1e6;                     % Bandwidth in Hz
-numSubcarriers = 1024;               % Number of sub-carriers
+numSubcarriers = 256;               % Number of sub-carriers
 subSampling = 4;                     % Only take every subsampling's sub-carriers
 
 antennaHeight = 25;                  % Antenna height of the bse station in m

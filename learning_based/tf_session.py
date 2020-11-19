@@ -80,7 +80,8 @@ class MMNet_graph():
             # Create session and initialize all variables
             sess = tf.Session()
 
-            train_writer = tf.summary.FileWriter('./reports/'+self.params['save_name']+'/log/train', sess.graph)
+           # train_writer = tf.summary.FileWriter('./reports/'+self.params['save_name']+'/log/train', sess.graph)
+            train_writer = tf.summary.FileWriter('./reports/' + 'model1' + '/log/train', sess.graph)
             # test_writer = tf.summary.FileWriter('./reports/'+self.params['save_name']+'/log/test', sess.graph)
 
             if len(self.params['start_from']) > 1:

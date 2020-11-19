@@ -3,7 +3,10 @@ import matplotlib as mpl
 mpl.use('Agg')
 from tf_session import *
 import argparse
+import tensorflow.compat.v1 as tf
 
+
+tf.disable_v2_behavior()
 
 parser = argparse.ArgumentParser(description='MIMO signal detection simulator')
 
@@ -261,7 +264,7 @@ for it in range(args.train_iterations):
             for l in range(1,int(args.layers)+1):
                 c = log_['layer'+str(l)]['linear']['I_WH']
                 print((np.linalg.norm(c, axis=(1,2))[0]))
-            
+
             #temp2 = log_['layer'+str(l)]['linear']
             #np.save('W'+str(l)+'.npy', temp2['W'])
             #np.save('H'+str(l)+'.npy', temp2['H'])
@@ -281,7 +284,9 @@ for it in range(args.train_iterations):
         #train_summary_writer.add_summary(train_summary_, it)
 
 result = model_eval(test_data, params['SNR_dB_min'], params['SNR_dB_max'], mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H, sess)
-print(result)
+print('results:', result)
+model_plot_result(test_data, params['SNR_dB_min'], params['SNR_dB_max'], mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H, sess)
+
 #SNR_dBs = np.linspace(params['SNR_dB_min'],params['SNR_dB_max'],params['SNR_dB_max']-params['SNR_dB_min']+1)
 #accs_mmse = np.zeros(shape=SNR_dBs.shape)
 #accs_NN = np.zeros(shape=SNR_dBs.shape)

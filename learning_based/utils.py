@@ -1,10 +1,13 @@
 import tensorflow.compat.v1 as tf
 import numpy as np
+import matplotlib.pyplot as plt
 
-def model_eval(test_data, snr_min, snr_max, mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H, sess, iterations=150):
-    SNR_dBs = np.linspace(snr_min, snr_max, snr_max - snr_min + 1)
-    accs_mmse = []#np.zeros(shape=SNR_dBs.shape)
-    accs_NN = []#np.zeros(shape=SNR_dBs.shape)
+def model_eval(test_data: object, snr_min: object, snr_max: object, mmse_accuracy: object, accuracy: object, batch_size: object, snr_db_min: object, snr_db_max: object, H: object,
+               sess: object,
+               iterations: object = 150) -> object:
+    SNR_dBs = np.linspace(snr_min, snr_max, round(snr_max - snr_min) + 1)
+    accs_mmse = []  #np.zeros(shape=SNR_dBs.shape)
+    accs_NN = []  #np.zeros(shape=SNR_dBs.shape)
     bs = 1000
     for i in range(SNR_dBs.shape[0]):
         noise_ = []
@@ -26,6 +29,44 @@ def model_eval(test_data, snr_min, snr_max, mmse_accuracy, accuracy, batch_size,
         accs_mmse.append((SNR_dBs[i], 1. - mmse))#+= acc[0]/iterations
         accs_NN.append((SNR_dBs[i], 1. - nn))# += acc[1]/iterations
     return {'mmse':accs_mmse, 'model':accs_NN}
+
+
+def model_plot_result(test_data: object, snr_min: object, snr_max: object, mmse_accuracy: object, accuracy: object, batch_size: object, snr_db_min: object, snr_db_max: object, H: object,
+               sess: object,
+               iterations: object = 150) -> object:
+    SNR_dBs = np.linspace(snr_min, snr_max, round(snr_max - snr_min) + 1)
+    accs_mmse = []  #np.zeros(shape=SNR_dBs.shape)
+    accs_NN = []  #np.zeros(shape=SNR_dBs.shape)
+    bs = 1000
+    for i in range(SNR_dBs.shape[0]):
+        noise_ = []
+        error_ = []
+        mmse = 0.
+        nn = 0.
+        for j in range(iterations):
+            feed_dict = {
+                    batch_size: bs,
+                    snr_db_max: SNR_dBs[i],
+                    snr_db_min: SNR_dBs[i],
+                }
+            if not test_data == []:
+                sample_ids = np.random.randint(0, np.shape(test_data)[0], bs)
+                feed_dict[H] = test_data[sample_ids]
+            acc = sess.run([mmse_accuracy, accuracy], feed_dict)
+            mmse += acc[0] / iterations
+            nn   += acc[1] / iterations
+        accs_mmse.append(1. - mmse)#+= acc[0]/iterations
+        accs_NN.append(1. - nn)# += acc[1]/iterations
+    fig, ax = plt.subplots()
+    ax.grid(which='minor', alpha=0.2)
+    ax.grid(which='major', alpha=0.5)
+    ax.set(yscale='log')
+    ax.plot(SNR_dBs, accs_mmse, color='red')
+    ax.plot(SNR_dBs, accs_NN, color='blue')
+    #filename = "plot_%s_%s.png" % name.replace()
+    fig.savefig('test-graph1.png')
+    return {'plot saves!'}
+
 
 def demodulate(y, constellation):
     shape = tf.shape(y)

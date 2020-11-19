@@ -10,6 +10,8 @@ def complex_to_real_dataset(Hr, Hi):
 
 
 # TODO: train and test are equal
+# TODO: this operation is extremely inefficient. Rewrite it using tensorflow dataset API
+#  https://www.tensorflow.org/api_docs/python/tf/data/experimental/save
 def read_channels_dataset(channels_dataset_file, num_channel_samples):
     with h5py.File(channels_dataset_file, "r") as input_f:
         H_dataset = complex_to_real_dataset(input_f['H_r'].value, input_f['H_i'].value)
@@ -19,6 +21,7 @@ def read_channels_dataset(channels_dataset_file, num_channel_samples):
         train_data_ref = H_dataset
         test_data_ref = H_dataset
         print('Channels dataset shape:', H_dataset.shape)
+        print ('train_data_ref.shape[0] = ', train_data_ref.shape[0])
         rnd_index = np.random.randint(0, train_data_ref.shape[0], num_channel_samples)
         train_data_ref = train_data_ref[rnd_index]
         test_data_ref = test_data_ref[rnd_index]
