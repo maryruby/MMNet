@@ -1,6 +1,8 @@
 import tensorflow.compat.v1 as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import json
+
 
 def model_eval(test_data: object, snr_min: object, snr_max: object, mmse_accuracy: object, accuracy: object, batch_size: object, snr_db_min: object, snr_db_max: object, H: object,
                sess: object,
@@ -28,10 +30,33 @@ def model_eval(test_data: object, snr_min: object, snr_max: object, mmse_accurac
             nn   += acc[1] / iterations
         accs_mmse.append((SNR_dBs[i], 1. - mmse))#+= acc[0]/iterations
         accs_NN.append((SNR_dBs[i], 1. - nn))# += acc[1]/iterations
-    return {'mmse':accs_mmse, 'model':accs_NN}
+    return {'mmse': accs_mmse, 'model': accs_NN, 'snr_dbs': SNR_dBs}
 
 
-def model_plot_result(test_data: object, snr_min: object, snr_max: object, mmse_accuracy: object, accuracy: object, batch_size: object, snr_db_min: object, snr_db_max: object, H: object,
+def plot_result_graph(result, x_size, y_size, mod):
+    fig, ax = plt.subplots()
+    ax.grid(which='minor', alpha=0.2)
+    ax.grid(which='major', alpha=0.5)
+    ax.set(yscale='log')
+    ax.set_ylim(10 ** -5, 10 ** -1)
+    ax.set_ylabel('SER')
+    ax.set_xlabel('SNR')
+    ax.plot(result['snr_dbs'], result['mmse'], color='red', label='MMSE')
+    ax.plot(result['snr_dbs'], result['model'], color='blue', label='MMNet')
+    ax.legend()
+    fig.savefig("graph_%s_%s_%s.png" % (x_size, y_size, mod))
+
+
+def dump_result_to_file(result, params, log_file):
+    metrics = {'mmse': list(zip(result['snr_dbs'], result['mmse'])),
+               'model': list(zip(result['snr_dbs'], result['model']))}
+    print('results:', metrics)
+    if log_file:
+        with open(log_file, 'a') as result_fd:
+            json.dump({'result': metrics, 'params': params}, result_fd)
+
+
+def model_plot_result(test_data: object, x_size:int, y_size:int, mod:str, snr_min: object, snr_max: object, mmse_accuracy: object, accuracy: object, batch_size: object, snr_db_min: object, snr_db_max: object, H: object,
                sess: object,
                iterations: object = 150) -> object:
     SNR_dBs = np.linspace(snr_min, snr_max, round(snr_max - snr_min) + 1)
@@ -61,11 +86,14 @@ def model_plot_result(test_data: object, snr_min: object, snr_max: object, mmse_
     ax.grid(which='minor', alpha=0.2)
     ax.grid(which='major', alpha=0.5)
     ax.set(yscale='log')
+    ax.set_ylim(10**-5,10**-1)
+    ax.set_ylabel('SER')
+    ax.set_xlabel('SNR')
     ax.plot(SNR_dBs, accs_mmse, color='red')
     ax.plot(SNR_dBs, accs_NN, color='blue')
-    #filename = "plot_%s_%s.png" % name.replace()
-    fig.savefig('test-graph1.png')
-    return {'plot saves!'}
+    fig.savefig("graph_%s_%s_%s.png" % (x_size, y_size, mod))
+    return {'mmse': list(zip(SNR_dBs, accs_mmse)),
+            'model': list(zip(SNR_dBs, accs_NN))}
 
 
 def demodulate(y, constellation):

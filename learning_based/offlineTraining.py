@@ -4,6 +4,7 @@ mpl.use('Agg')
 from tf_session import *
 import argparse
 import tensorflow.compat.v1 as tf
+from utils import model_eval, plot_result_graph, dump_result_to_file
 
 
 tf.disable_v2_behavior()
@@ -103,6 +104,9 @@ parser.add_argument('--start-from',
 parser.add_argument('--log',
         action = 'store_true',
         help = 'Log data mode')
+
+parser.add_argument('--log-file',
+        help = 'File for result logging (append)')
 
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu # Ignore if you do not have multiple GPUs
@@ -284,8 +288,13 @@ for it in range(args.train_iterations):
         #train_summary_writer.add_summary(train_summary_, it)
 
 result = model_eval(test_data, params['SNR_dB_min'], params['SNR_dB_max'], mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H, sess)
-print('results:', result)
-model_plot_result(test_data, params['SNR_dB_min'], params['SNR_dB_max'], mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H, sess)
+plot_result_graph(result, args.x_size, args.y_size, args.modulation)
+dump_result_to_file(result, params, args.log_file)
+# result = model_plot_result(test_data, args.x_size, args.y_size, args.modulation, params['SNR_dB_min'],
+#                         params['SNR_dB_max'], mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H, sess)
+# print('results:', result)
+# with open(args.log_file, 'a') as result_fd:
+#     json.dump({'result': result, 'params': params}, result_fd)
 
 #SNR_dBs = np.linspace(params['SNR_dB_min'],params['SNR_dB_max'],params['SNR_dB_max']-params['SNR_dB_min']+1)
 #accs_mmse = np.zeros(shape=SNR_dBs.shape)
