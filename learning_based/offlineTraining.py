@@ -6,6 +6,7 @@ from utils import model_eval, plot_result_graph, dump_result_to_file
 from exp import get_data
 import matplotlib
 matplotlib.use('Agg')
+tf.disable_v2_behavior()
 
 
 def complex_to_real(inp):
@@ -122,11 +123,7 @@ def parse_args():
     return args
 
 
-def main():
-    tf.disable_v2_behavior()
-
-    args = parse_args()
-
+def offline_training(args):
     # Simulation parameters
     params = {
         'N': args.y_size,  # Number of receive antennas
@@ -233,9 +230,10 @@ def main():
                         mmse_accuracy, accuracy, batch_size,
                         snr_db_min, snr_db_max,
                         H, sess)
-    plot_result_graph(result, args.x_size, args.y_size, args.modulation)
+    plot_result_graph(result, args.x_size, args.y_size, args.modulation, args.linear, args.denoiser)
     dump_result_to_file(result, params, args.log_file)
 
 
 if __name__ == "__main__":
-    main()
+    arguments = parse_args()
+    offline_training(arguments)

@@ -33,7 +33,7 @@ def model_eval(test_data: object, snr_min: object, snr_max: object, mmse_accurac
     return {'mmse': accs_mmse, 'model': accs_NN, 'snr_dbs': SNR_dBs}
 
 
-def plot_result_graph(result, x_size, y_size, mod):
+def plot_result_graph(result, x_size, y_size, mod, linear, denoiser):
     fig, ax = plt.subplots()
     ax.grid(which='minor', alpha=0.2)
     ax.grid(which='major', alpha=0.5)
@@ -41,10 +41,11 @@ def plot_result_graph(result, x_size, y_size, mod):
     ax.set_ylim(10 ** -5, 10 ** -1)
     ax.set_ylabel('SER')
     ax.set_xlabel('SNR')
+    ax.set_title('Linear:%s Denoiser:%s\nx-size:%s y-size:%s\n%s' % (linear, denoiser, x_size, y_size, mod))
     ax.plot(result['snr_dbs'], result['mmse'], color='red', label='MMSE')
     ax.plot(result['snr_dbs'], result['model'], color='blue', label='MMNet')
     ax.legend()
-    fig.savefig("graph_%s_%s_%s.png" % (x_size, y_size, mod))
+    fig.savefig("./graphs/graph_%s_%s_%s_%s_%s.png" % (x_size, y_size, mod, linear, denoiser))
 
 
 def dump_result_to_file(result, params, log_file):

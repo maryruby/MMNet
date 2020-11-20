@@ -21,6 +21,7 @@ class generator(object):
 
         if self.mod_scheme == 'QAM':
             self.mod_n = int(modulation.split('_')[1])
+            # TODO(mary): this is bug! use elif instead of if below
         if self.mod_scheme == 'MIX':
             self.mod_n = int(modulation.split('_')[1])
         else:
