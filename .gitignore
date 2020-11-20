@@ -3,3 +3,5 @@
 *.asv
 reports
 __pycache__
+learning_based/graphs
+learning_based/result1.json
