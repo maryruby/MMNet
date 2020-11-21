@@ -3,7 +3,12 @@
 #### 2020-11-20
 Работает grid_search.py (ревизия 1fa8cc1366985eab86fe2f97618ff6588079ed5f)
 `python3 grid_search.py --x-size 16 --y-size 64 --snr-min 2 --snr-max 7 --layers 10 -lr 1e-3 --batch-size 500 --train-iterations 10000 --mod QAM_4  --test-batch-size 5000 --test-every 100`
-Зафиксирован linear MMNet_iid, перебираю всевозможные denoiser-ы
+Зафиксирован linear MMNet_iid, перебираю всевозможные denoiser-ы. Шалость удалась — парочка из них, featurous_nn и OAMPNet дают в хвостике результат чуть лучше соответствующего MMNet.
+Графики прилагаю в порядке улучшения:
+![MMNet_iid with DetNet denoiser](graphs/graph_16_64_QAM_4_MMNet_iid_DetNet.png) 
+![MMNet_iid with MMNet denoiser](graphs/graph_16_64_QAM_4_MMNet_iid_MMNet.png)
+![MMNet_iid with OAMPNet denoiser](graphs/graph_16_64_QAM_4_MMNet_iid_OAMPNet.png)
+![MMNet_iid with featurous_nn denoiser](graphs/graph_16_64_QAM_4_MMNet_iid_featurous_nn.png)
 
 #### 2020-11-19
 1. Работает запуск offlineTraining (ревизия 9672acced33b31b217d7edda36711dbbc9902245)
