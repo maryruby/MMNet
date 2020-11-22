@@ -1,3 +1,7 @@
+[Log of process](/log.md)
+
+[Future work ideas](/todo.md)
+
 # Learning-based schemes
 These schemes are implemented using Tensorflow. We support QAM4, QAM16 and QAM64 modulations. Number of transmit and receive anttenas can be set using ``--x-size`` and ``--y-size``, respectively. The range of training and test signal-to-noise ratio (SNR) is set with ``--snr-min`` and ``--snr-max`` arguments. Please use ``--data`` flag in order to specify using specific channels dataset. Not feeding this flag is interpreted for independent and identically distributed Gaussian channels.
 
