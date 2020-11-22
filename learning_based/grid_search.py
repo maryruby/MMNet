@@ -104,7 +104,7 @@ def parse_args():
 
 
 LINEAR_LAYERS = ["MMNet", "MMNet_iid", "Ht", "lin_DetNet", "identity", "OAMPNet"]
-DENOISER_LAYERS = ["gaussian", "DetNet", "MMNet", "OAMPNet", "identity", "naive_nn", "featurous_nn"]
+DENOISER_LAYERS = ["gaussian_test", "DetNet", "MMNet", "OAMPNet", "identity", "naive_nn", "featurous_nn"]
 
 
 def main(args):

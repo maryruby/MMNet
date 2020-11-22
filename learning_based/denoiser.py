@@ -22,6 +22,18 @@ class denoiser(object):
         shatt1 = tf.reshape(shatt1, [-1, self.NT]) 
         denoiser_helper = {}
         return shatt1, denoiser_helper
+
+    def gaussian_test(self, zt, xhatt, rt, features, linear_helper):
+        tau2_t = features['tau2_t']
+        arg = tf.reshape(zt,[-1,1]) - self.lgst_constel
+        arg = tf.reshape(arg, [-1, self.NT, self.M])
+        arg = - tf.square(arg) / 2. / tau2_t
+        arg = tf.reshape(arg, [-1, self.M])
+        shatt1 = tf.nn.softmax(arg, axis=1)
+        shatt1 = tf.matmul(shatt1, tf.reshape(self.lgst_constel, [self.M,1]))
+        shatt1 = tf.reshape(shatt1, [-1, self.NT])
+        denoiser_helper = {}
+        return shatt1, denoiser_helper, shatt1
                                          
     def DetNet(self, zt, xhatt, rt, features, linear_helper):        
         H = features['H']
@@ -61,7 +73,7 @@ class denoiser(object):
     def identity(self, zt, xhatt, rt, features, linear_helper):
         shatt1 = zt
         denoiser_helper = {'onsager':tf.Variable(0.)}
-        return shatt1, denoiser_helper
+        return shatt1, denoiser_helper, shatt1
 
     def naive_nn(self, zt, xhatt, rt, features, linear_helper):
         nhidden = 30
@@ -73,7 +85,7 @@ class denoiser(object):
         den = tf.matmul(den, tf.reshape(self.lgst_constel, [self.M,1]))    
         shatt1 = tf.reshape(den, [-1, self.NT]) 
         denoiser_helper = {'onsager': 0.}
-        return shatt1, denoiser_helper
+        return shatt1, denoiser_helper, shatt1
 
     def featurous_nn(self, zt, xhatt, rt, features, linear_helper):
         H = features['H']

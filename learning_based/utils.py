@@ -41,7 +41,7 @@ def plot_result_graph(result, x_size, y_size, mod, linear, denoiser):
     ax.set_ylim(10 ** -5, 10 ** -1)
     ax.set_ylabel('SER')
     ax.set_xlabel('SNR')
-    ax.set_title('Linear:%s Denoiser:%s\nx-size:%s y-size:%s\n%s' % (linear, denoiser, x_size, y_size, mod))
+    ax.set_title('Linear:%s Denoiser:%s\nx-size:%s y-size:%s %s' % (linear, denoiser, x_size, y_size, mod))
     ax.plot(result['snr_dbs'], result['mmse'], color='red', label='MMSE')
     ax.plot(result['snr_dbs'], result['model'], color='blue', label='MMNet')
     ax.legend()
