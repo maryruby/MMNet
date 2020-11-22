@@ -1,5 +1,17 @@
 ## Log
 
+#### 2020-11-21
+Нарисовала более удобный график для сравнения MMNet denoiser и featurous_nn:
+![MMNet_iid denoiser vs featurous_nn denoiser in QAM_4](graphs/graph_16_64_QAM_4_MMNet_denoiser vs_featurous_denoiser.jpg) 
+ 
+Продолжила исследования замены denoiser'ов. Сегодня в рамках QAM_16. Сводный график сравнения лучшего варианта (featurous_nn) c дефолтным MMNet представлена на графике.
+![MMNet_iid denoiser vs featurous_nn denoiser in QAM_16](graphs/graph_16_64_QAM_16_MMNet_iid_featurous_nn vs MMNet MMNet denoiser.jpg) 
+
+А вот для QAM_64 так красиво уже не вышло. График сравнения denoiser'ов featurous_nn и MMNet:
+![MMNet_iid denoiser vs featurous_nn denoiser in QAM_64](graphs/graph_16_64_QAM_64_denoiser_MMNet vs denoiser featurous_nn.jpg) 
+
+Чуть лучше denoiser'а MMNet показал себя при QAM_64 denoiser OAMPNet. Совсем незначительно.
+
 #### 2020-11-20
 Работает grid_search.py (ревизия 1fa8cc1366985eab86fe2f97618ff6588079ed5f)
 `python3 grid_search.py --x-size 16 --y-size 64 --snr-min 2 --snr-max 7 --layers 10 -lr 1e-3 --batch-size 500 --train-iterations 10000 --mod QAM_4  --test-batch-size 5000 --test-every 100`
