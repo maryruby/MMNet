@@ -96,6 +96,13 @@ def parse_args():
                         required=True,
                         help='denoiser function model')
 
+    parser.add_argument('--loss-type',
+                        type=str,
+                        required=False,
+                        help='Loss type',
+                        choices=["sum_layers", "mse"],
+                        default="sum_layers")
+
     parser.add_argument('--exp',
                         type=str,
                         required=False,
@@ -138,7 +145,8 @@ def offline_training(args):
         'start_from': args.start_from,
         'data': args.data,
         'linear_name': args.linear,
-        'denoiser_name': args.denoiser
+        'denoiser_name': args.denoiser,
+        'loss_type': args.loss_type
     }
 
     if args.data:
@@ -166,6 +174,7 @@ def offline_training(args):
     loss = nodes['loss']
     logs = nodes['logs']
     measured_snr = nodes['measured_snr']
+    merged = nodes['merged']
 
     # Training loop
     record = {'before': [], 'after': []}
@@ -200,7 +209,8 @@ def offline_training(args):
             before_acc = 1. - sess.run(accuracy, feed_dict_test)
             record['before'].append(before_acc)
 
-        sess.run(train, feed_dict)
+        summary, _, = sess.run([merged, train], feed_dict)
+        mmnet.write_tensorboard_summary(summary, it, test=False)
 
         # Test
         if it % args.test_every == 0:
@@ -213,12 +223,14 @@ def offline_training(args):
                 sample_ids = np.random.randint(0, np.shape(test_data)[0], args.test_batch_size)
                 feed_dict[H] = test_data[sample_ids]
             if args.log:
-                test_accuracy_, test_loss_, logs_, x_, H_ = sess.run([accuracy, loss, logs, x, H], feed_dict)
+                summary, test_accuracy_, test_loss_, logs_, x_, H_ = sess.run([merged, accuracy, loss, logs, x, H], feed_dict)
+                mmnet.write_tensorboard_summary(summary, it, test=True)
                 np.save('log.npy', logs_)
                 break
             else:
-                test_accuracy_, test_loss_, measured_snr_ = sess.run([accuracy, loss, measured_snr], feed_dict)
+                summary, test_accuracy_, test_loss_, measured_snr_ = sess.run([merged, accuracy, loss, measured_snr], feed_dict)
                 print((it, 'SER: {:.2E}'.format(1. - test_accuracy_), test_loss_, measured_snr_))
+                mmnet.write_tensorboard_summary(summary, it, test=True)
             if args.corr_analysis:
                 log_ = sess.run(logs, feed_dict)
                 for l in range(1, int(args.layers) + 1):

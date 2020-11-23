@@ -21,7 +21,7 @@ def model_eval(test_data: object, snr_min: object, snr_max: object, mmse_accurac
                     batch_size: bs,
                     snr_db_max: SNR_dBs[i],
                     snr_db_min: SNR_dBs[i],
-                }    
+                }
             if not test_data == []:
                 sample_ids = np.random.randint(0, np.shape(test_data)[0], bs)
                 feed_dict[H] = test_data[sample_ids]
@@ -54,7 +54,8 @@ def dump_result_to_file(result, params, log_file):
     print('results:', metrics)
     if log_file:
         with open(log_file, 'a') as result_fd:
-            json.dump({'result': metrics, 'params': params}, result_fd)
+            log = json.dumps({'result': metrics, 'params': params})
+            result_fd.write(log + "\n")
 
 
 def model_plot_result(test_data: object, x_size:int, y_size:int, mod:str, snr_min: object, snr_max: object, mmse_accuracy: object, accuracy: object, batch_size: object, snr_db_min: object, snr_db_max: object, H: object,
@@ -103,22 +104,50 @@ def demodulate(y, constellation):
     constellation = tf.reshape(constellation, shape=[1, -1])
     indices = tf.cast(tf.argmin(tf.abs(y - constellation), axis=1), tf.int32)
     indices = tf.reshape(indices, shape=shape)
-    return indices  
+    return indices
+
 
 def accuracy(x, y):
-    '''Computes the fraction of elements for which x and y are equal'''
+    """Computes the fraction of elements for which x and y are equal"""
     return tf.reduce_mean(tf.cast(tf.equal(x, y), tf.float32))
 
-def get_weights(in_size, out_size): 
-    w = tf.Variable(tf.random_normal([in_size, out_size], stddev=np.sqrt(1./(in_size+out_size)), dtype=tf.float32)) 
-    b = tf.Variable(tf.zeros(out_size, dtype=tf.float32)) 
-    return w, b 
 
-def fc_layer(x, out_size): 
-    w, b = get_weights(int(x.shape[-1]), out_size) 
-    #tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES, tf.nn.l2_loss(w))
-    y = tf.add(tf.matmul(tf.cast(x, tf.float32), w), b) 
-    return y 
+def variable_summaries(var):
+    """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+    with tf.name_scope('summaries'):
+        mean = tf.reduce_mean(var)
+        tf.summary.scalar('mean', mean)
+        with tf.name_scope('stddev'):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+        tf.summary.scalar('stddev', stddev)
+        tf.summary.scalar('max', tf.reduce_max(var))
+        tf.summary.scalar('min', tf.reduce_min(var))
+        tf.summary.histogram('histogram', var)
+
+
+def get_weights(in_size, out_size):
+    with tf.name_scope("weights"):
+        w = tf.Variable(tf.random_normal([in_size, out_size], stddev=np.sqrt(1./(in_size+out_size)), dtype=tf.float32))
+        variable_summaries(w)
+    with tf.name_scope("biases"):
+        b = tf.Variable(tf.zeros(out_size, dtype=tf.float32))
+        variable_summaries(b)
+    return w, b
+
+
+def fc_layer(x, out_size, layer_name="fc_layer", act=None):
+    with tf.name_scope(layer_name):
+        w, b = get_weights(int(x.shape[-1]), out_size)
+        with tf.name_scope('Wx_plus_b'):
+            y = tf.add(tf.matmul(tf.cast(x, tf.float32), w), b)
+            tf.summary.histogram('pre_activations', y)
+        if not act:
+            return y
+
+        result = act(y)
+        tf.summary.histogram('activations', result)
+        return result
+
 
 def mixed_accuracy(x, y, mods):
     acc = tf.cast(tf.equal(x, y), tf.float32)
@@ -129,30 +158,33 @@ def mixed_accuracy(x, y, mods):
     acc_pam4 = tf.reduce_sum(tf.multiply(acc, pam4_mask))
     acc_pam4 = tf.divide(acc_pam4, tf.reduce_sum(pam4_mask))
     return acc_bpsk, acc_pam4
+
+
 def batch_matvec_mul(A,b, transpose_a=False):
-    '''Multiplies a matrix A of size batch_sizexNxK
+    """Multiplies a matrix A of size batch_sizexNxK
        with a vector b of size batch_sizexK
        to produce the output of size batch_sizexN
-    '''    
+    """
     C = tf.matmul(A, tf.expand_dims(b, axis=2), transpose_a=transpose_a)
-    return tf.squeeze(C, -1) 
+    return tf.squeeze(C, -1)
+
 
 def emp_opt_layer(train_z, train_x, test_z, test_xid, constellation_):
-    '''Emprically optimal minimizing norm2( x - x_est )
+    """Emprically optimal minimizing norm2( x - x_est )
     Inputs:
         train_z: nd-array of shape [sample_size, NT], samples of denoiser input at the corresponding layer
         train_x: actual x values correspoding to each z e.g. ground truth
         test_z: the z samples we want to infer the x from
         constellation_: the constellation which x values come from
-    Outputs: 
+    Outputs:
         test_x: Tensor of shape [batch_size, NT]
-    '''
-    nbins = 1000    
+    """
+    nbins = 1000
     NT = np.shape(train_z)[1]
     OPT_ = []
     for tx_ in range(NT):
         PROBS_ = []
-        for cpoint_ in constellation_:     
+        for cpoint_ in constellation_:
             points_ = np.reshape(train_x[:,tx_]==cpoint_, (-1))
             train_n = train_z - train_x
             [vals_, bin_edges_] = np.histogram(train_n[points_, tx_], range=(-2.,2.), bins=nbins, normed=True)
@@ -203,58 +235,62 @@ def emp_opt_layer(train_z, train_x, test_z, test_xid, constellation_):
 #               #p_ /= tf.reduce_sum(p_, axis=1, keepdims=True)
 #               #print sess.run(p_, feed_dict)
 #        Prob = tf.concat(P_, axis=1)
-#        Prob /= tf.reduce_sum(Prob, axis=1, keepdims=True)    
-#        emp_opt = tf.matmul(tf.reshape(Prob, [-1, 4]), tf.reshape(constellation, [4,1]))    
+#        Prob /= tf.reduce_sum(Prob, axis=1, keepdims=True)
+#        emp_opt = tf.matmul(tf.reshape(Prob, [-1, 4]), tf.reshape(constellation, [4,1]))
 #        OPT_.append(emp_opt)
 #    OPT_ = tf.concat(OPT_, axis=1)
 #    emp_acc = accuracy(gholam_ind_, mimo.demodulate(OPT_, modtypes))
-#    #print sess.run(OPT_, feed_dict)    
+#    #print sess.run(OPT_, feed_dict)
 #    print 1. - sess.run(emp_acc, feed_dict)
 
     return np.mean(OPT_id == test_xid)
 
+
 def zf(y, H):
-    '''Zero-Forcing Detector
+    """Zero-Forcing Detector
     Inputs:
         y: Tensor of shape [batch_size, N]
         H: Tensor of shape [batch_size, N, K]
         mod: Instance of the modulator class
     Outputs:
         indices: Tensor of shape [batch_size, K]
-    '''
-    # Projected channel output
-    Hty = batch_matvec_mul(tf.transpose(H, perm=[0, 2, 1]), y)
+    """
+    with tf.name_scope("zf_detector"):
+        # Projected channel output
+        Hty = batch_matvec_mul(tf.transpose(H, perm=[0, 2, 1]), y)
 
-    # Gramian of transposed channel matrix
-    HtH = tf.matmul(H, H, transpose_a=True)
+        # Gramian of transposed channel matrix
+        HtH = tf.matmul(H, H, transpose_a=True)
 
-    # Inverse Gramian 
-    HtHinv = tf.matrix_inverse(HtH)
+        # Inverse Gramian
+        HtHinv = tf.matrix_inverse(HtH)
 
-    # ZF Detector
-    x = batch_matvec_mul(HtHinv, Hty)
-    
-    return x
+        # ZF Detector
+        x = batch_matvec_mul(HtHinv, Hty)
+
+        return x
+
 
 def mmse(y, H, noise_sigma):
-    '''MMSE Detector
+    """MMSE Detector
     Inputs:
         y: Tensor of shape [batch_size, N]
         H: Tensor of shape [batch_size, N, K]
         noise_sigma: Tensor of shape [batch_size]
     Outputs:
         indices: Tensor of shape [batch_size, K]
-    '''
-    # Projected channel output
-    Hty = batch_matvec_mul(tf.transpose(H, perm=[0, 2, 1]), y)
+    """
+    with tf.name_scope("mmse_detector"):
+        # Projected channel output
+        Hty = batch_matvec_mul(tf.transpose(H, perm=[0, 2, 1]), y)
 
-    # Gramian of transposed channel matrix
-    HtH = tf.matmul(H, H, transpose_a=True)
-    # Inverse Gramian 
-    HtHinv = tf.matrix_inverse(HtH + tf.reshape(tf.square(noise_sigma)/2, [-1, 1, 1]) * tf.eye(tf.shape(H)[-1], batch_shape=[tf.shape(H)[0]]))
+        # Gramian of transposed channel matrix
+        HtH = tf.matmul(H, H, transpose_a=True)
+        # Inverse Gramian
+        HtHinv = tf.matrix_inverse(HtH + tf.reshape(tf.square(noise_sigma)/2, [-1, 1, 1]) * tf.eye(tf.shape(H)[-1], batch_shape=[tf.shape(H)[0]]))
 
-    # ZF Detector
-    x = batch_matvec_mul(HtHinv, Hty)
-    
-    return x
+        # ZF Detector
+        x = batch_matvec_mul(HtHinv, Hty)
+
+        return x
 

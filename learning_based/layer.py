@@ -2,6 +2,7 @@ from utils import *
 from denoiser import denoiser 
 from linear import linear
 
+
 def layer(xhat, r, onsager, features, linear_name, denoiser_name, information):
     denoiser_fun = getattr(denoiser(information), denoiser_name)
     linear_fun = getattr(linear(information), linear_name)

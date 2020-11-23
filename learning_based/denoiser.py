@@ -1,4 +1,6 @@
+import tensorflow.compat.v1 as tf
 from utils import *
+
 
 class denoiser(object):
     def __init__(self, information):
@@ -37,7 +39,7 @@ class denoiser(object):
                                          
     def DetNet(self, zt, xhatt, rt, features, linear_helper):        
         H = features['H']
-        shatt1 = fc_layer(tf.nn.relu(fc_layer(zt, 8 * self.NT)), self.NT)
+        shatt1 = fc_layer(fc_layer(zt, 8 * self.NT, layer_name="fc1", act=tf.nn.relu), self.NT, layer_name="fc2")
         denoiser_helper = {'onsager':tf.Variable(0., trainable=False)}
         return shatt1, denoiser_helper, shatt1
 
@@ -77,10 +79,10 @@ class denoiser(object):
 
     def naive_nn(self, zt, xhatt, rt, features, linear_helper):
         nhidden = 30
-        den = tf.nn.relu(fc_layer(tf.reshape(zt, [-1,1]), nhidden))
-        den = tf.nn.relu(fc_layer(den, 10))
-        den = fc_layer(den, 1)
-        den_logit = fc_layer(den, self.M)
+        den = fc_layer(tf.reshape(zt, [-1,1]), nhidden, layer_name="fc1", act=tf.nn.relu)
+        den = fc_layer(den, 10, layer_name="fc2", act=tf.nn.relu)
+        den = fc_layer(den, 1, layer_name="fc3")
+        den_logit = fc_layer(den, self.M, layer_name="fc4")
         den = tf.nn.softmax(den_logit, dim=1)
         den = tf.matmul(den, tf.reshape(self.lgst_constel, [self.M,1]))    
         shatt1 = tf.reshape(den, [-1, self.NT]) 
@@ -89,16 +91,18 @@ class denoiser(object):
 
     def featurous_nn(self, zt, xhatt, rt, features, linear_helper):
         H = features['H']
-        feature1 = tf.reduce_sum(tf.square(rt), axis=1, keep_dims=True)
-        feature2 = 1./tf.trace(tf.matmul(H,H, transpose_a=True))
-        feature2 = tf.reshape(feature2, [-1,1])
-        feature = tf.concat([feature1, feature2], axis=1)
-        tau2_t = tf.nn.relu(fc_layer(feature, 10))
-        tau2_t = tf.nn.relu(fc_layer(tau2_t, 4))
-        tau2_t = tf.square(fc_layer(tau2_t, 1))
-        tau2_t = tf.expand_dims(tau2_t, axis=2) 
-        tau2_t = tf.maximum(tau2_t, 1e-10)
-        shatt1, _ = self.gaussian(zt, {'tau2_t': tau2_t})
-        denoiser_helper = {'onsager':0.}
-        return shatt1, denoiser_helper, shatt1
+        with tf.name_scope("denoiser_featurous_nn"):
+            feature1 = tf.reduce_sum(tf.square(rt), axis=1, keep_dims=True)
+            feature2 = 1./tf.trace(tf.matmul(H,H, transpose_a=True))
+            feature2 = tf.reshape(feature2, [-1,1])
+            feature = tf.concat([feature1, feature2], axis=1)
+            tau2_t = fc_layer(feature, 10, layer_name="fc1", act=tf.nn.relu)
+            tau2_t = fc_layer(tau2_t, 4, layer_name="fc2", act=tf.nn.relu)
+            tau2_t = fc_layer(tau2_t, 1, layer_name="fc3", act=tf.square)
+            tau2_t = tf.expand_dims(tau2_t, axis=2)
+            tau2_t = tf.maximum(tau2_t, 1e-10)
+            with tf.name_scope("gaussian"):
+                shatt1, _ = self.gaussian(zt, {'tau2_t': tau2_t})
+                denoiser_helper = {'onsager':0.}
+                return shatt1, denoiser_helper, shatt1
 

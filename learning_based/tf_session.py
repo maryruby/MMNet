@@ -8,6 +8,8 @@ from sample_generator import generator
 class MMNet_graph():
     def __init__(self, params):
         self.params = params
+        self.train_writer = None
+        self.test_writer = None
 
     def build(self):
 
@@ -44,21 +46,24 @@ class MMNet_graph():
             x_mmse = mmse(y, H, noise_sigma)
             x_mmse_idx = demodulate(x_mmse, constellation)
             x_mmse = tf.gather(constellation, x_mmse_idx)
-            acc_mmse = accuracy(indices, demodulate(x_mmse, constellation))
+            with tf.name_scope("accuracy_mmse"):
+                acc_mmse = accuracy(indices, demodulate(x_mmse, constellation))
+                tf.summary.scalar("total_accuracy_mmse", acc_mmse)
 
             # MMNet detection
             x_NN, helper = detector(self.params, constellation, x, y, H, noise_sigma, indices, batch_size).create_graph()
-            loss = loss_fun(x_NN, x)
-            # for i in range(10):
-            #    print "y-Hx loss instead of xhat-x"
-            # loss = loss_yhx(y, x_NN, H)
-            for i in range(1):
+            loss = loss_fun(x_NN, x, self.params)
+
+            with tf.name_scope("accuracy_nn"):
                 print("REPORTING MAX ACCURACY")
-            temp = []
-            for i in range(self.params['L']):
-                temp.append(accuracy(indices, demodulate(x_NN[i], constellation)))
-                # acc_NN = accuracy(indices, mimo.demodulate(x_NN[train_layer_no-1], modtypes))
-            acc_NN = tf.reduce_max(temp)
+                temp = []
+                for i in range(self.params['L']):
+                    layer_acc = accuracy(indices, demodulate(x_NN[i], constellation))
+                    temp.append(layer_acc)
+                    tf.summary.scalar("accuracy_nn_layer_%s" % i, layer_acc)
+                    # acc_NN = accuracy(indices, mimo.demodulate(x_NN[train_layer_no-1], modtypes))
+                acc_NN = tf.reduce_max(temp)
+                tf.summary.scalar("total_accuracy_nn", acc_NN)
 
             # Training operation
             print("tf_session: Optimizing for the total loss")
@@ -75,24 +80,34 @@ class MMNet_graph():
 
             # Create summary writer
             # merged = [0]
-            # merged = tf.summary.merge_all()
+            merged = tf.summary.merge_all()
             # print "merged"
             # Create session and initialize all variables
             sess = tf.Session()
 
-           # train_writer = tf.summary.FileWriter('./reports/'+self.params['save_name']+'/log/train', sess.graph)
-            train_writer = tf.summary.FileWriter('./reports/' + 'model1' + '/log/train', sess.graph)
-            # test_writer = tf.summary.FileWriter('./reports/'+self.params['save_name']+'/log/test', sess.graph)
+            self.train_writer = tf.summary.FileWriter('./reports/' + 'model1' + '/log/train', sess.graph)
+            self.test_writer = tf.summary.FileWriter('./reports/' + 'model1' + '/log/test', sess.graph)
 
             if len(self.params['start_from']) > 1:
                 saver.restore(sess, self.params['start_from'])
             else:
                 sess.run(init)
-            train_writer.flush()
-            # test_writer.flush()
+            self.train_writer.flush()
+            self.test_writer.flush()
 
             nodes = {'measured_snr': actual_snrdB, 'batch_size': batch_size, 'lr': lr, 'snr_db_min': snr_db_min,
                      'snr_db_max': snr_db_max, 'x': x, 'x_id': indices, 'H': H, 'y': y, 'sess': sess,
                      'train': train_step, 'accuracy': acc_NN, 'loss': loss, 'mmse_accuracy': acc_mmse,
-                     'constellation': constellation, 'logs': helper, 'init': init}
+                     'constellation': constellation, 'logs': helper, 'init': init,
+                     'merged': merged}
         return nodes
+
+    def write_tensorboard_summary(self, summary, global_step=None, test=False):
+        if test:
+            if self.test_writer:
+                self.test_writer.add_summary(summary, global_step)
+                self.test_writer.flush()
+        else:
+            if self.train_writer:
+                self.train_writer.add_summary(summary, global_step)
+                self.train_writer.flush()
