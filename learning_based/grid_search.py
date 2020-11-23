@@ -98,13 +98,19 @@ def parse_args():
     parser.add_argument('--log-file',
                         help='File for result logging (append)')
 
+
+
+
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu  # Ignore if you do not have multiple GPUs
     return args
 
 
-LINEAR_LAYERS = ["MMNet", "MMNet_iid", "Ht", "lin_DetNet", "identity", "OAMPNet"]
-DENOISER_LAYERS = ["gaussian_test", "DetNet", "MMNet", "OAMPNet", "identity", "naive_nn", "featurous_nn"]
+#LINEAR_LAYERS = ["MMNet", "MMNet_iid", "Ht", "lin_DetNet", "identity", "OAMPNet"]
+#DENOISER_LAYERS = ["gaussian_test", "DetNet", "MMNet", "OAMPNet", "identity", "naive_nn", "featurous_nn"]
+
+LINEAR_LAYERS = ["MMNet_iid"]
+DENOISER_LAYERS = ["MMNet", "featurous_nn"]
 
 
 def main(args):
