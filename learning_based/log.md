@@ -1,22 +1,39 @@
 ## Log
 
+#### 2020-11-27
+Довожу до ума данные, чтобы закончить статью.
+Таблица, которая получилась (энергетический проигрыш - это расстояние по одному уровню по горизонтали, уровень я выбрала 10<sup>-3</sup>, аппроксимирую прямой в логарифмическом масштабе):
+![table1](graphs/table1.png) 
+
+И сводный график лучшего пока варианта - MMNet-iid c denoiser'ом featurous_nn и оптимизацией ошибки по последнему слою:
+![Transparent_best](graphs/Transparent_MMNet_featurous_nn_32_64_QAM16.png) 
+Видно, на сколько мы приблизились к методу максимального правдоподобия.
+
+
+#### 2020-11-26
+Дорисовала график MMNet-iid c denoiser'ом MMNet и ошибкой, считающейся только по последнему слою для комплекта к предыдущим.
+`python3 offlineTraining.py --x-size 32 --y-size 64 --snr-min 11 --snr-max 16 --layers 10 -lr 1e-3 --batch-size 500 --train-iterations 10000 --mod QAM_16 --test-batch-size 5000 --linear MMNet_iid --denoiser MMNet --loss-type mse --test-every 100 --log-file result1.json`
+(ревизия https://github.com/maryruby/MMNet/commit/46b2f95a1925a2b65f1a03ef38fce3119c64d1ca) 
+![MMNet_iid_MMNet_32_64_QAM_16](graphs/graph_32_64_QAM_16_MMNet_iid_MMNet_last-loss.png) 
+
 #### 2020-11-23
 Перешла к системам 32х64. Интересно было протестировать различия. 
 Сегодня три интересных графика:
 1. "Честный" график MMNet-iid c denoiser MMNet. Обучен стандартно (batch = 500, iterations = 10000), строка запуска:
-`python3 grid_search.py  --x-size 16 --y-size 64 --snr-min 9 --snr-max 14 --layers 10 -lr 1e-3 --batch-size 500 --train-iterations 10000 --mod QAM_16  --test-batch-size 100000  --test-every 100` 
+`python3 grid_search.py  --x-size 32 --y-size 64 --snr-min 11 --snr-max 16 --layers 10 -lr 1e-3 --batch-size 500 --train-iterations 10000 --mod QAM_16  --test-batch-size 100000  --test-every 100` 
 (ревизия https://github.com/maryruby/MMNet/commit/46b2f95a1925a2b65f1a03ef38fce3119c64d1ca) 
 ![MMNet_iid_MMNet_32_64_QAM_16](graphs/graph_32_64_QAM_16_MMNet_iid_MMNet.png) 
 
 2. График MMNet-iid c denoiser featurous_nn. Обучен стандартно (batch = 500, iterations = 10000), строка запуска:
-`python3 grid_search.py  --x-size 16 --y-size 64 --snr-min 9 --snr-max 14 --layers 10 -lr 1e-3 --batch-size 500 --train-iterations 10000 --mod QAM_16  --test-batch-size 100000  --test-every 100` 
+`python3 grid_search.py  --x-size 32 --y-size 64 --snr-min 11 --snr-max 16 --layers 10 -lr 1e-3 --batch-size 500 --train-iterations 10000 --mod QAM_16  --test-batch-size 100000  --test-every 100` 
 (ревизия https://github.com/maryruby/MMNet/commit/46b2f95a1925a2b65f1a03ef38fce3119c64d1ca)
 ![MMNet_iid_featurous_32_64_QAM_16](graphs/graph_32_64_QAM_16_MMNet_iid_featurous_nn.png) 
 
 3. График MMNet-iid c denoiser featurous_nn и ошибкой mse, которая считается только по последнему слою. Обучен стандартно, строка запуска:
 `python3 offlineTraining.py --x-size 32 --y-size 64 --snr-min 11 --snr-max 16 --layers 10 -lr 1e-3 --batch-size 500 --train-iterations 10000 --mod QAM_16 --test-batch-size 5000 --linear MMNet_iid --denoiser featurous_nn --loss-type mse --test-every 100 --log-file result1.json`
 (ревизия https://github.com/maryruby/MMNet/commit/46b2f95a1925a2b65f1a03ef38fce3119c64d1ca)
-![MMNet_iid_featurous_32_64_QAM_16](graphs/MMNet_vs_featurous_32_64_QAM16_last_loss.png)
+![MMNet_iid_featurous_32_64_QAM_16_last_loss](graphs/graph_32_64_QAM_16_MMNet_iid_featurous_nn_last_loss.png)
+
 
 Анализируя эти графики, я пришла к выводу, что описание в статье не соответствует приведенному у них графику.
 Прилагаю его сразу:

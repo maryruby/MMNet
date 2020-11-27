@@ -95,6 +95,13 @@ def parse_args():
                         action='store_true',
                         help='Log data mode')
 
+    parser.add_argument('--loss_type',
+                        type=str,
+                        required=False,
+                        help='Loss type',
+                        choices=["sum_layers", "mse"],
+                        default="sum_layers")
+
     parser.add_argument('--log-file',
                         help='File for result logging (append)')
 
@@ -110,7 +117,7 @@ def parse_args():
 #DENOISER_LAYERS = ["gaussian_test", "DetNet", "MMNet", "OAMPNet", "identity", "naive_nn", "featurous_nn"]
 
 LINEAR_LAYERS = ["MMNet_iid"]
-DENOISER_LAYERS = ["MMNet", "featurous_nn"]
+DENOISER_LAYERS = ["featurous_nn"]
 
 
 def main(args):

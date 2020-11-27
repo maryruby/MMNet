@@ -106,3 +106,23 @@ class denoiser(object):
                 denoiser_helper = {'onsager':0.}
                 return shatt1, denoiser_helper, shatt1
 
+
+    def featurous_avg(self, zt, xhatt, rt, features, linear_helper):
+        H = features['H']
+        with tf.name_scope("denoiser_featurous_nn"):
+            feature1 = tf.reduce_sum(tf.square(rt), axis=1, keep_dims=True)
+            feature2 = 1./tf.trace(tf.matmul(H,H, transpose_a=True))
+            feature2 = tf.reshape(feature2, [-1,1])
+            feature = tf.concat([feature1, feature2], axis=1)
+            tau2_t = fc_layer(feature, 10, layer_name="fc1", act=tf.nn.relu)
+            tau2_t = fc_layer(tau2_t, 4, layer_name="fc2", act=tf.nn.relu)
+            tau2_t = fc_layer(tau2_t, 10, layer_name="fc3", act=tf.square)
+            tau2_t = np.mean(tau2_t)
+            tau2_t = tf.expand_dims(tau2_t, axis=2)
+            tau2_t = tf.maximum(tau2_t, 1e-10)
+            with tf.name_scope("gaussian"):
+                shatt1, _ = self.gaussian(zt, {'tau2_t': tau2_t})
+                denoiser_helper = {'onsager':0.}
+                return shatt1, denoiser_helper, shatt1
+
+
