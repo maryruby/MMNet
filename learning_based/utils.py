@@ -4,13 +4,18 @@ import matplotlib.pyplot as plt
 import json
 
 
-def model_eval(test_data: object, snr_min: object, snr_max: object, mmse_accuracy: object, accuracy: object, batch_size: object, snr_db_min: object, snr_db_max: object, H: object,
-               sess: object,
-               iterations: object = 150) -> object:
+def frobenius_norm_squared(X):
+    return tf.trace(tf.matmul(X, X, transpose_a=True))
+
+
+def model_eval(test_data, snr_min, snr_max, mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H,
+               sess,
+               iterations=150,
+               n_samples=1000):
     SNR_dBs = np.linspace(snr_min, snr_max, round(snr_max - snr_min) + 1)
     accs_mmse = []  #np.zeros(shape=SNR_dBs.shape)
     accs_NN = []  #np.zeros(shape=SNR_dBs.shape)
-    bs = 1000
+    bs = n_samples
     for i in range(SNR_dBs.shape[0]):
         noise_ = []
         error_ = []
@@ -58,9 +63,9 @@ def dump_result_to_file(result, params, log_file):
             result_fd.write(log + "\n")
 
 
-def model_plot_result(test_data: object, x_size:int, y_size:int, mod:str, snr_min: object, snr_max: object, mmse_accuracy: object, accuracy: object, batch_size: object, snr_db_min: object, snr_db_max: object, H: object,
-               sess: object,
-               iterations: object = 150) -> object:
+def model_plot_result(test_data, x_size, y_size, mod, snr_min, snr_max, mmse_accuracy, accuracy, batch_size, snr_db_min, snr_db_max, H,
+               sess,
+               iterations = 150):
     SNR_dBs = np.linspace(snr_min, snr_max, round(snr_max - snr_min) + 1)
     accs_mmse = []  #np.zeros(shape=SNR_dBs.shape)
     accs_NN = []  #np.zeros(shape=SNR_dBs.shape)

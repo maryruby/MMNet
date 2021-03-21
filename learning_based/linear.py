@@ -29,15 +29,6 @@ class linear(object):
         zt = shatt + tf.square(tf.Variable(1.)) * batch_matvec_mul(W, rt)
         return zt, helper
 
-    def MMNet_iid_true(self, shatt, rt, features):
-        batch_size = self.batch_size
-        H = features['H']
-        W = tf.matrix_transpose(H)
-        H_H = tf.linalg.adjoint(H)
-        Theta1 = tf.Variable(tf.random_normal([1], 0., 0.001))
-        helper = {'W': W}
-        zt = shatt + Theta1 * batch_matvec_mul(H_H, (rt - batch_matvec_mul(H, shatt)))
-        return zt, helper
 
     def Ht(self, shatt, rt, features):
         batch_size = self.batch_size

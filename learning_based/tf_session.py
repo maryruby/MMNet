@@ -39,7 +39,7 @@ class MMNet_graph():
                                                             self.params['correlation'])
             else:
                 y, H, noise_sigma, actual_snrdB = mimo.channel(x, snr_db_min, snr_db_max, [], self.params['data'],
-                                                               self.params['correlation'])
+                                                               self.params['correlation'], self.params['use_correlated_H'])
 
             # Zero-forcing detection
             # x_mmse = mmse(y, H)

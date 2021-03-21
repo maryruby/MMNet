@@ -125,6 +125,10 @@ def parse_args():
     parser.add_argument('--log-file',
                         help='File for result logging (append)')
 
+    parser.add_argument('--correlated-h',
+                        action='store_true',
+                        help='Generate correlated H for both time and antennas')
+
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu  # Ignore if you do not have multiple GPUs
     return args
@@ -146,7 +150,8 @@ def offline_training(args):
         'data': args.data,
         'linear_name': args.linear,
         'denoiser_name': args.denoiser,
-        'loss_type': args.loss_type
+        'loss_type': args.loss_type,
+        'use_correlated_H': args.correlated_h
     }
 
     if args.data:
@@ -241,7 +246,8 @@ def offline_training(args):
                         params['SNR_dB_min'], params['SNR_dB_max'],
                         mmse_accuracy, accuracy, batch_size,
                         snr_db_min, snr_db_max,
-                        H, sess)
+                        H, sess,
+                        n_samples=args.batch_size)
     plot_result_graph(result, args.x_size, args.y_size, args.modulation, args.linear, args.denoiser)
     dump_result_to_file(result, params, args.log_file)
 

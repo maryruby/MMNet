@@ -1,11 +1,14 @@
 from utils import *
+import scipy.linalg as LA
 import tensorflow.compat.v1 as tf
+from corr_H import generate_correlated_matrix
 
 
 class generator(object):
     def __init__(self, params, batch_size):
         modulation = params['modulation']
         self.batch_size = batch_size
+        self.n_samples = params['batch_size']
         if params['data']:
             self.Hdataset_powerdB = params['Hdataset_powerdB']
         else:
@@ -98,22 +101,35 @@ class generator(object):
         R2 = LA.sqrtm(Rt)
         return R1, R2
 
-    def channel(self, x, snr_db_min, snr_db_max, H, dataset_flag, correlation_flag):
+    def channel(self, x, snr_db_min, snr_db_max, H, dataset_flag, correlation_flag, use_correlated_H=False):
         '''Simulate transmission over a random or static channel with SNRs draw uniformly
            from the range [snr_db_min, snr_db_max] 
         '''
         # Channel Matrix
         if dataset_flag:
             H = H
+        elif use_correlated_H:
+            print("correlated channels are generated")
+            Hr, Hi = generate_correlated_matrix(self.NT, self.NR, self.n_samples)
+            Hr = tf.reshape(Hr, (self.batch_size, self.NR, self.NT))
+            Hi = tf.reshape(Hi, (self.batch_size, self.NR, self.NT))
+            h1 = tf.concat([Hr, -1. * Hi], axis=2)
+            h2 = tf.concat([Hi, Hr], axis=2)
+            H = tf.concat([h1, h2], axis=1)
+            print("H.shape", H.shape)
+            self.Hdataset_powerdB = 0.
         else:
             print("iid channels are generated")
             Hr = tf.random_normal(shape=[self.batch_size, self.NR, self.NT], stddev=1. / np.sqrt(2. * self.NR),
                                   dtype=tf.float32)
             Hi = tf.random_normal(shape=[self.batch_size, self.NR, self.NT], stddev=1. / np.sqrt(2. * self.NR),
                                   dtype=tf.float32)
+            # [[Hr, -1. * Hi],
+            #  [Hi, Hr]]
             h1 = tf.concat([Hr, -1. * Hi], axis=2)
             h2 = tf.concat([Hi, Hr], axis=2)
             H = tf.concat([h1, h2], axis=1)
+            print("H.shape", H.shape)
             self.Hdataset_powerdB = 0.
         # Channel Noise
         snr_db = tf.random_uniform(shape=[self.batch_size, 1], minval=snr_db_min, maxval=snr_db_max, dtype=tf.float32)
