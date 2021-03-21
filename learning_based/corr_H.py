@@ -36,13 +36,14 @@ def prepare_correlation_transform(R, name):
 
 def generate_correlated_matrix(Nt, Nr, Nsamples):
     """result shape is (Nsamples, Nr, Nt)"""
-    Xr, Xi = make_random_complex_matrix(Nt, Nr, Nsamples)
 
+    # make iid matrix
+    Xr, Xi = make_random_complex_matrix(Nt, Nr, Nsamples)
+    # make transforms for correlations
     temporal_corr = prepare_correlation_transform(make_temporal_correlations(Nsamples), "temporal_correlations")
     antenna_corr = prepare_correlation_transform(make_cross_antenna_correlations(Nt, Nr), "cross_antenna_correlations")
+    # apply correlations
+    Xr_, Xi_ = tf.matmul(temporal_corr, Xr), tf.matmul(temporal_corr, Xi)    # apply temporal correlation
+    Xr__, Xi__ = tf.matmul(Xr_, antenna_corr), tf.matmul(Xi_, antenna_corr)  # apply correlation bw antennas
 
-    Xr_, Xi_ = tf.matmul(temporal_corr, Xr), tf.matmul(temporal_corr, Xi)
-
-    Xr__, Xi__ = tf.reshape(tf.matmul(Xr_, antenna_corr), (Nsamples, Nr, Nt)), \
-                 tf.reshape(tf.matmul(Xi_, antenna_corr), (Nsamples, Nr, Nt))
-    return Xr__, Xi__
+    return tf.reshape(Xr__, (Nsamples, Nr, Nt)), tf.reshape(Xi__, (Nsamples, Nr, Nt))
