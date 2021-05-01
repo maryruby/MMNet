@@ -131,6 +131,9 @@ def parse_args():
                         action='store_true',
                         help='Generate correlated H for both time and antennas')
 
+    parser.add_argument('--just-save-h',
+                        help='File to save H matrix (if this option is set program just save H and exit!)')
+
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu  # Ignore if you do not have multiple GPUs
     return args
@@ -216,17 +219,18 @@ def offline_training(args):
             before_acc = 1. - sess.run(accuracy, feed_dict_test)
             record['before'].append(before_acc)
 
-        # summary, _  = sess.run([merged, train], feed_dict)
-        H_generated = sess.run(H, feed_dict)
-        print("H gen shape:", H_generated.shape)
-        with open("H.csv", "w") as H_out:
-            for sample_id in range(H_generated.shape[0]):
-                for r in range(H_generated.shape[1]):
-                    H_out.write(",".join(map(str, H_generated[sample_id, r, :])) + "\n")
-        # np.savetxt("H.csv", H_generated.transpose(2, 0, 1).reshape(H_generated.shape[-1], -1).T, delimiter=",")
-        with open("H.txt", 'w') as H_out:
-            H_out.write(str(H_generated))
-        sys.exit(1)
+        if args.just_save_h is not None:
+            H_generated = sess.run(H, feed_dict)
+            print("H gen shape:", H_generated.shape)
+            with open(args.just_save_h, "w") as H_out:
+                for sample_id in range(H_generated.shape[0]):
+                    for r in range(H_generated.shape[1]):
+                        H_out.write(",".join(map(str, H_generated[sample_id, r, :])) + "\n")
+            # with open("H.txt", 'w') as H_out:
+            #     H_out.write(str(H_generated))
+            sys.exit(0)
+
+        summary, _ = sess.run([merged, train], feed_dict)
         mmnet.write_tensorboard_summary(summary, it, test=False)
 
         # Test
