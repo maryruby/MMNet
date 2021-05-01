@@ -5,32 +5,34 @@ import scipy
 
 def make_random_complex_matrix(Nt, Nr, Nsamples):
     """result shape is (Nsamples, Nr * Nt)"""
-    Hr = tf.random_normal(shape=[Nsamples, Nr * Nt], stddev=1. / np.sqrt(2. * Nr), dtype=tf.float32)
-    Hi = tf.random_normal(shape=[Nsamples, Nr * Nt], stddev=1. / np.sqrt(2. * Nr), dtype=tf.float32)
+    Hr = tf.random_normal(shape=[Nr * Nt, Nsamples], dtype=tf.float32)
+    Hi = tf.random_normal(shape=[Nr * Nt, Nsamples], dtype=tf.float32)
     return Hr, Hi
 
 
 def make_temporal_correlations(Nsamples):
-    fdT = 3e-4
+    fdT = 4e-3
     z = 2 * np.pi * fdT * np.arange(Nsamples)
     r = scipy.special.j0(z)  # Bessel function of the first kind of zero order
-    t = scipy.linalg.toeplitz(r)
-    return t
+    R_tau = scipy.linalg.toeplitz(r)
+    return R_tau
 
 
 def make_cross_antenna_correlations(Nt, Nr):
-    alpha = 0.01
+    alpha = 0.3
     Rtx = np.power(alpha, (np.arange(Nt) / (Nt - 1.)) ** 2)
     RTX = scipy.linalg.toeplitz(Rtx)
-    beta = 0.01
+    beta = 0.9
     Rrx = np.power(beta, (np.arange(Nr) / (Nr - 1.)) ** 2)
     RRX = scipy.linalg.toeplitz(Rrx)
-    return np.kron(RRX, RTX)
+    return np.kron(RTX, RRX)
 
 
 def prepare_correlation_transform(R, name):
-    V, D = np.linalg.eig(R)
-    A = np.abs(V * np.sqrt(D))  # is that correct?
+    D, V, W = scipy.linalg.eig(R, left=True)
+    D = D.real*np.eye(D.shape[0])
+    D_poz = np.maximum.reduce([D, np.zeros(D.shape)])
+    A = np.matmul(V, np.sqrt(D_poz))
     return tf.Variable(A, trainable=False, name=name, dtype=tf.float32)
 
 
@@ -38,12 +40,13 @@ def generate_correlated_matrix(Nt, Nr, Nsamples):
     """result shape is (Nsamples, Nr, Nt)"""
 
     # make iid matrix
-    Xr, Xi = make_random_complex_matrix(Nt, Nr, Nsamples)
+    Xr, Xi = make_random_complex_matrix(Nt, Nr, Nsamples)  # shape = [Nr * Nt, Nsamples]
     # make transforms for correlations
     temporal_corr = prepare_correlation_transform(make_temporal_correlations(Nsamples), "temporal_correlations")
     antenna_corr = prepare_correlation_transform(make_cross_antenna_correlations(Nt, Nr), "cross_antenna_correlations")
-    # apply correlations
-    Xr_, Xi_ = tf.matmul(temporal_corr, Xr), tf.matmul(temporal_corr, Xi)    # apply temporal correlation
-    Xr__, Xi__ = tf.matmul(Xr_, antenna_corr), tf.matmul(Xi_, antenna_corr)  # apply correlation bw antennas
 
-    return tf.reshape(Xr__, (Nsamples, Nr, Nt)), tf.reshape(Xi__, (Nsamples, Nr, Nt))
+    # apply correlation bw antennas
+    Xr_, Xi_ = tf.matmul(antenna_corr, Xr), tf.matmul(antenna_corr, Xi)
+    # apply temporal correlation
+    Xr__, Xi__ = tf.matmul(temporal_corr, tf.transpose(Xr_)), tf.matmul(temporal_corr, tf.transpose(Xi_))
+    return Xr__, Xi__

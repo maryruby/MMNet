@@ -111,11 +111,14 @@ class generator(object):
         elif use_correlated_H:
             print("correlated channels are generated")
             Hr, Hi = generate_correlated_matrix(self.NT, self.NR, self.n_samples)
-            Hr = tf.reshape(Hr, (self.batch_size, self.NR, self.NT))
-            Hi = tf.reshape(Hi, (self.batch_size, self.NR, self.NT))
+            print("Hr shape:", Hr.shape)
+            Hr = tf.reshape(Hr, (self.batch_size, self.NT, self.NR))
+            Hi = tf.reshape(Hi, (self.batch_size, self.NT, self.NR))
             h1 = tf.concat([Hr, -1. * Hi], axis=2)
             h2 = tf.concat([Hi, Hr], axis=2)
+
             H = tf.concat([h1, h2], axis=1)
+            H = tf.transpose(H, perm=[0,2,1])
             print("H.shape", H.shape)
             self.Hdataset_powerdB = 0.
         else:
