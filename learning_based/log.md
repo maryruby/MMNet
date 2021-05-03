@@ -1,5 +1,10 @@
 ## Log
 
+#### 2021-05-03
+Заработал новый online-training, запускать так 
+`python3 newOnlineTraining.py --x-size 32 --y-size 64 --snr-min 11 --snr-max 16 --layers 10 -lr 1e-3 --batch-size 50 --train-iterations 1 --test-iterations 5  --mod QAM_16 --test-batch-size 50 --linear MMNet_iid --denoiser featurous_nn_simplified --loss-type mse --test-every 100  --output-dir ./ --data --channels-dir ./H_correlated.csv --load-data-from-csv --num-channel-samples 400`
+коммит https://github.com/maryruby/MMNet/commit/d744149c05cc378c4731f899fd02a13d667878ef
+
 #### 2021-03-22
 
 Написан corr_H, в котором создается коррелированная по времени и меж-антенно матрица H. Удалось внедрить в общий код так, чтобы он не падал, но обучить при этом сетку не получается. SER остается равен 0.5. Причем при mse тоже, то есть проблема чисто в матрицах.
