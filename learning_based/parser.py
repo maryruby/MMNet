@@ -19,6 +19,10 @@ def parse():
                         required=True,
                         help='Number of neural net blocks')
 
+    parser.add_argument('--loss-type',
+                        required=False,
+                        help='Loss type (mse or sum_layers)')
+
     parser.add_argument('--snr-min',
                         type=float,
                         required=True,
@@ -54,6 +58,11 @@ def parse():
                         type=int,
                         required=True,
                         help='Number of training iterations')
+
+    parser.add_argument('--test-iterations',
+                        type=int,
+                        required=False,
+                        help='Number of fine-tuning iterations in test')
 
     parser.add_argument('--modulation', '-mod',
                         type=str,
@@ -135,6 +144,10 @@ def parse():
                         type=int,
                         help='Number of channel samples',
                         default=100)
+
+    parser.add_argument('--load-data-from-csv',
+                        action='store_true',
+                        help='Load channel matrix H from csv')
 
     args = parser.parse_args()
 
