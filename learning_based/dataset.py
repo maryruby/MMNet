@@ -18,7 +18,7 @@ def read_channels_dataset_csv(channels_dataset_file, num_channel_samples, x_size
     print('Channels dataset power (dB): %f' % power_db)
 
     print('train_data_ref.shape[0] = ', H_dataset.shape[0])
-    num_samples = min(int(H_dataset.shape[0] * 0.8), num_channel_samples)
+    num_samples = min(int(H_dataset.shape[0] - 1), num_channel_samples)
     train_data_ref = H_dataset[:num_samples]
     test_data_ref = H_dataset[num_samples:]
     return train_data_ref, test_data_ref, power_db

@@ -186,6 +186,25 @@ def offline_training(args):
     measured_snr = nodes['measured_snr']
     merged = nodes['merged']
 
+    if args.just_save_h:
+        print('Generate and save H, then exit')
+        feed_dict = {
+            batch_size: args.batch_size,
+            lr: args.learn_rate,
+            snr_db_max: params['SNR_dB_max'],
+            snr_db_min: params['SNR_dB_min'],
+        }
+        H_generated = sess.run(H, feed_dict)
+        # print(vars(args))
+        print("H gen shape:", H_generated.shape)
+        with open(args.just_save_h, "w") as H_out:
+            for sample_id in range(H_generated.shape[0]):
+                for r in range(H_generated.shape[1]):
+                    H_out.write(",".join(map(str, H_generated[sample_id, r, :])) + "\n")
+        # with open("H.txt", 'w') as H_out:
+        #   H_out.write(str(H_generated))
+        sys.exit(0)
+
     # Training loop
     record = {'before': [], 'after': []}
     record_flag = False
@@ -219,16 +238,6 @@ def offline_training(args):
             before_acc = 1. - sess.run(accuracy, feed_dict_test)
             record['before'].append(before_acc)
 
-        if args.just_save_h is not None:
-            H_generated = sess.run(H, feed_dict)
-            print("H gen shape:", H_generated.shape)
-            with open(args.just_save_h, "w") as H_out:
-                for sample_id in range(H_generated.shape[0]):
-                    for r in range(H_generated.shape[1]):
-                        H_out.write(",".join(map(str, H_generated[sample_id, r, :])) + "\n")
-            # with open("H.txt", 'w') as H_out:
-            #     H_out.write(str(H_generated))
-            sys.exit(0)
 
         summary, _ = sess.run([merged, train], feed_dict)
         mmnet.write_tensorboard_summary(summary, it, test=False)
