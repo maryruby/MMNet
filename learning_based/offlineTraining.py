@@ -188,19 +188,20 @@ def offline_training(args):
 
     if args.just_save_h:
         print('Generate and save H, then exit')
-        feed_dict = {
-            batch_size: args.batch_size,
-            lr: args.learn_rate,
-            snr_db_max: params['SNR_dB_max'],
-            snr_db_min: params['SNR_dB_min'],
-        }
-        H_generated = sess.run(H, feed_dict)
-        # print(vars(args))
-        print("H gen shape:", H_generated.shape)
         with open(args.just_save_h, "w") as H_out:
-            for sample_id in range(H_generated.shape[0]):
-                for r in range(H_generated.shape[1]):
-                    H_out.write(",".join(map(str, H_generated[sample_id, r, :])) + "\n")
+            for i in range(50):
+                feed_dict = {
+                    batch_size: args.batch_size,
+                    lr: args.learn_rate,
+                    snr_db_max: params['SNR_dB_max'],
+                    snr_db_min: params['SNR_dB_min'],
+                }
+                H_generated = sess.run(H, feed_dict)
+                # print(vars(args))
+                print("H gen shape:", H_generated.shape)
+                for sample_id in range(H_generated.shape[0]):
+                    for r in range(H_generated.shape[1]):
+                        H_out.write(",".join(map(str, H_generated[sample_id, r, :])) + "\n")
         # with open("H.txt", 'w') as H_out:
         #   H_out.write(str(H_generated))
         sys.exit(0)

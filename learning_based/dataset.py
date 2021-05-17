@@ -9,10 +9,10 @@ def complex_to_real_dataset(Hr, Hi):
     return out
 
 
-def read_channels_dataset_csv(channels_dataset_file, num_channel_samples, x_size, y_size):
+def read_channels_dataset_csv(channels_dataset_file, num_channel_samples, x_size, y_size, sequences_size):
     H_dataset = np.genfromtxt(channels_dataset_file, delimiter=",", dtype=np.float64)
     data_size = H_dataset.shape[0] * H_dataset.shape[1]
-    H_dataset = H_dataset.reshape((int(data_size / (4*x_size*y_size)), 2*y_size, 2*x_size))
+    H_dataset = H_dataset.reshape((sequences_size, int(data_size / (4*x_size*y_size*sequences_size)), 2*y_size, 2*x_size))
     print('Channels dataset shape:', H_dataset.shape)
     power_db = 10. * np.log(np.mean(np.sum(H_dataset ** 2, axis=1))) / np.log(10.)
     print('Channels dataset power (dB): %f' % power_db)
@@ -44,8 +44,8 @@ def read_channels_dataset_orig(channels_dataset_file, num_channel_samples):
         return train_data_ref, test_data_ref, power_db
 
 
-def read_channels_dataset(channels_dataset_file, num_channel_samples, x_size, y_size, from_csv=True):
+def read_channels_dataset(channels_dataset_file, num_channel_samples, x_size, y_size, from_csv=True, sequences_size=50):
     if from_csv:
-        return read_channels_dataset_csv(channels_dataset_file, num_channel_samples, x_size, y_size)
+        return read_channels_dataset_csv(channels_dataset_file, num_channel_samples, x_size, y_size, sequences_size)
     else:
         return read_channels_dataset_orig(channels_dataset_file, num_channel_samples)

@@ -22,7 +22,8 @@ if __name__ == '__main__':
             args.channels_dir,
             args.num_channel_samples,
             args.x_size, args.y_size,
-            from_csv=args.load_data_from_csv)
+            from_csv=args.load_data_from_csv,
+            sequences_size=args.repeated_H_sequences)
         params['Hdataset_powerdB'] = power_db
     else:
         raise Exception("data is required here")
@@ -52,63 +53,66 @@ if __name__ == '__main__':
     measured_snr = nodes['measured_snr']
     init = nodes['init']
 
-    # Train/evaluation process below:
-    # 1. for each matrix H in train data (80% of samples in H dataset) we iterate train_iterations
-    # 2. then for each matrix H in test data we do finetuning for train_iterations and then evaluate quality
+    snrs = np.linspace(params['SNR_dB_min'], params['SNR_dB_max'],
+                       round(params['SNR_dB_max'] - params['SNR_dB_min']) + 1)
 
-    # Train
-    print("TRAIN")
-    with tqdm(total=train_data_ref.shape[0] * args.train_iterations) as progress_bar:
-        for r in range(train_data_ref.shape[0]):
-            train_data = train_data_ref[r]
-            feed_dict = {
-                batch_size: args.batch_size,
-                lr: args.learn_rate,
-                snr_db_max: params['SNR_dB_max'],
-                snr_db_min: params['SNR_dB_min'],
-            }
-            train_H = np.zeros((args.batch_size, train_data.shape[0], train_data.shape[1]), dtype=train_data.dtype)
-            for i in range(args.batch_size):
-                train_H[i] = train_data.copy()
-            feed_dict[H] = train_H
-            for it in range(args.train_iterations):
-                sess.run(train, feed_dict)
-                progress_bar.update(1)
-    # Test
-    print("TEST")
+    train_data_ref = train_data_ref.reshape(train_data_ref.shape[0] * train_data_ref.shape[1], train_data_ref.shape[2], train_data_ref.shape[3])
+
     test_results = []
-    snrs = np.linspace(params['SNR_dB_min'], params['SNR_dB_max'], round(params['SNR_dB_max'] - params['SNR_dB_min']) + 1)
-    with tqdm(total=test_data_ref.shape[0] * args.test_iterations * len(snrs)) as progress_bar:
-        for r in range(test_data_ref.shape[0]):
-            for snr in snrs:
-                test_data = test_data_ref[r]
-                feed_dict = {
-                    batch_size: args.test_batch_size,
-                    lr: args.learn_rate,
-                    snr_db_max: snr,
-                    snr_db_min: snr,
-                }
-                test_H = np.zeros((args.test_batch_size, test_data.shape[0], test_data.shape[1]), dtype=test_data.dtype)
-                for i in range(args.test_batch_size):
-                    test_H[i] = test_data.copy()
-                feed_dict[H] = test_H
 
-                current_results = []
-                mmse_test_accuracy_, test_accuracy_, test_loss_, measured_snr_ = sess.run([mmse_accuracy, accuracy, loss, measured_snr], feed_dict)
-                current_results.append({"iteration": 0, "ser": float(1. - test_accuracy_), 'mmse': float(1. - mmse_test_accuracy_), "snr": snr, "measured_snr": float(measured_snr_), "loss": float(test_loss_)})
-                # print('Test SER of %f on channel realization %d after %d iterations at SNR %f dB' % (1. - test_accuracy_, r, 0, measured_snr_))
-                for it in range(args.test_iterations):
-                    sess.run(train, feed_dict)
-                    mmse_test_accuracy_, test_accuracy_, test_loss_, measured_snr_ = sess.run([mmse_accuracy, accuracy, loss, measured_snr], feed_dict)
-                    current_results.append({"iteration": it+1, "ser": float(1. - test_accuracy_), 'mmse': float(1. - mmse_test_accuracy_), "snr": snr, "measured_snr": float(measured_snr_), "loss": float(test_loss_)})
-                    # print('Test SER of %f on channel realization %d after %d iterations at SNR %f dB' % (1. - test_accuracy_, r, it+1, measured_snr_))
-                    progress_bar.update(1)
-                test_results.append(current_results)
-    # Save results
     path = args.output_dir + '/OnlineTraining_%s_NT%sNR%s_%s_%s/' % (args.modulation, args.x_size, args.y_size, args.linear, args.denoiser)
     if not os.path.exists(path):
         os.makedirs(path)
     savePath = path + 'results1.json'
     with open(savePath, 'w') as output_fd:
-        json.dump(test_results, output_fd)
+
+        for snr in snrs:
+            print("SNR:", snr)
+            # Train
+            print("TRAIN")
+            with tqdm(total=train_data_ref.shape[0] * args.train_iterations) as progress_bar:
+                for r in range(train_data_ref.shape[0]):
+                    train_data = train_data_ref[r]
+                    feed_dict = {
+                        batch_size: args.batch_size,
+                        lr: args.learn_rate,
+                        snr_db_max: params['SNR_dB_max'],
+                        snr_db_min: params['SNR_dB_min'],
+                    }
+                    train_H = np.zeros((args.batch_size, train_data.shape[0], train_data.shape[1]), dtype=train_data.dtype)
+                    for i in range(args.batch_size):
+                        train_H[i] = train_data.copy()
+                    feed_dict[H] = train_H
+                    for it in range(args.train_iterations):
+                        sess.run(train, feed_dict)
+                        progress_bar.update(1)
+                # Test
+                print("TEST")
+                with tqdm(total=test_data_ref.shape[0] * test_data_ref.shape[1] * args.test_iterations * len(snrs)) as progress_bar:
+                    for sequence in range(test_data_ref.shape[0]):
+                        for r in range(test_data_ref.shape[1]):
+                            test_data = test_data_ref[sequence][r]
+                            feed_dict = {
+                                batch_size: args.test_batch_size,
+                                lr: args.learn_rate,
+                                snr_db_max: snr,
+                                snr_db_min: snr,
+                            }
+                            test_H = np.zeros((args.test_batch_size, test_data.shape[0], test_data.shape[1]), dtype=test_data.dtype)
+                            for i in range(args.test_batch_size):
+                                test_H[i] = test_data.copy()
+                            feed_dict[H] = test_H
+
+                            current_results = []
+                            mmse_test_accuracy_, test_accuracy_, test_loss_, measured_snr_ = sess.run([mmse_accuracy, accuracy, loss, measured_snr], feed_dict)
+                            test_results.append({"sequence": sequence, "h_in_sequence": r, "iteration": 0, "ser": float(1. - test_accuracy_), 'mmse': float(1. - mmse_test_accuracy_), "snr": snr, "measured_snr": float(measured_snr_), "loss": float(test_loss_)})
+                            output_fd.write(json.dumps({"sequence": sequence, "h_in_sequence": r, "iteration": 0, "ser": float(1. - test_accuracy_), 'mmse': float(1. - mmse_test_accuracy_), "snr": snr, "measured_snr": float(measured_snr_), "loss": float(test_loss_)}) + "\n")
+                            for it in range(args.test_iterations):
+                                sess.run(train, feed_dict)
+                                test_accuracy_, test_loss_, measured_snr_ = sess.run([accuracy, loss, measured_snr], feed_dict)
+                                test_results.append({"sequence": sequence, "h_in_sequence": r, "iteration": it+1, "ser": float(1. - test_accuracy_), 'mmse': float(1. - mmse_test_accuracy_), "snr": snr, "measured_snr": float(measured_snr_), "loss": float(test_loss_)})
+                                output_fd.write(json.dumps({"sequence": sequence, "h_in_sequence": r, "iteration": it+1, "ser": float(1. - test_accuracy_), 'mmse': float(1. - mmse_test_accuracy_), "snr": snr, "measured_snr": float(measured_snr_), "loss": float(test_loss_)}) + "\n")
+                                progress_bar.update(1)
+    # Save results
+    #     json.dump(test_results, output_fd)
     print('Results are saved at', savePath)

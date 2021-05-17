@@ -149,6 +149,10 @@ def parse():
                         action='store_true',
                         help='Load channel matrix H from csv')
 
+    parser.add_argument('--repeated-H-sequences',
+                        type=int,
+                        help='Number of sequences with correlated H matrices')
+
     args = parser.parse_args()
 
     # Simulation parameters
