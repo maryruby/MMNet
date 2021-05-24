@@ -1,5 +1,14 @@
 ## Log
 
+#### 2021-05-23
+Последний запуск (считаю с меньшим snr на 10 последовательностях по 10 матриц) MMNet+MMNet+sum_layers
+`python3 newOnlineTraining.py --x-size 32 --y-size 64 --snr-min 11 --snr-max 16 --layers 10 -lr 1e-3 --batch-size 500 --train-iterations 1000 --test-iterations 4  --mod QAM_16 --test-batch-size 1000 --linear MMNet --denoiser MMNet --loss-type sum_layers  --output-dir ./ --data --channels-dir ./H_10seq_10matrices-notso2.npy`
+
+Строчка, которая генерит матрицы: 
+`python3 offlineTraining.py  --x-size 32 --y-size 64 --snr-min 18 --snr-max 23 --layers 10 -lr 1e-3 --batch-size 10 --train-iterations 1 --mod QAM_16  --test-batch-size 10 --linear MMNet  --denoiser MMNet --test-every 1 --correlated-h --just-save-h H_10seq_10matr_sqrt.npy`
+batch_size отвечает за количество матриц в последовательности. Количество последовательностей в коде.
+
+
 #### 2021-05-03
 Заработал новый online-training, запускать так 
 `python3 newOnlineTraining.py --x-size 32 --y-size 64 --snr-min 11 --snr-max 16 --layers 10 -lr 1e-3 --batch-size 50 --train-iterations 1 --test-iterations 5  --mod QAM_16 --test-batch-size 50 --linear MMNet_iid --denoiser featurous_nn_simplified --loss-type mse --test-every 100  --output-dir ./ --data --channels-dir ./H_correlated.csv --load-data-from-csv --num-channel-samples 400`

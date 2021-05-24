@@ -170,6 +170,7 @@ def parse():
         'start_from': args.start_from,
         'data': args.data,
         'linear_name': args.linear,
-        'denoiser_name': args.denoiser
+        'denoiser_name': args.denoiser,
+        'loss_type': args.loss_type
     }
     return params, args

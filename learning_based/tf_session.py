@@ -52,7 +52,8 @@ class MMNet_graph():
 
             # MMNet detection
             x_NN, helper = detector(self.params, constellation, x, y, H, noise_sigma, indices, batch_size).create_graph()
-            loss = loss_fun(x_NN, x, self.params)
+            loss = loss_fun(x_NN, x, constellation, self.params)
+
 
             with tf.name_scope("accuracy_nn"):
                 print("REPORTING MAX ACCURACY")
@@ -63,7 +64,9 @@ class MMNet_graph():
                     tf.summary.scalar("accuracy_nn_layer_%s" % i, layer_acc)
                     # acc_NN = accuracy(indices, mimo.demodulate(x_NN[train_layer_no-1], modtypes))
                 acc_NN = tf.reduce_max(temp)
-                tf.summary.scalar("total_accuracy_nn", acc_NN)
+                tf.summary.scalar("max_accuracy_nn", acc_NN)
+                acc_NN_last = accuracy(indices, demodulate(x_NN[-1], constellation))
+                tf.summary.scalar("last_accuracy_nn", acc_NN_last)
 
             # Training operation
             print("tf_session: Optimizing for the total loss")
@@ -85,20 +88,21 @@ class MMNet_graph():
             # Create session and initialize all variables
             sess = tf.Session()
 
-            self.train_writer = tf.summary.FileWriter('./reports/' + 'model1' + '/log/train', sess.graph)
-            self.test_writer = tf.summary.FileWriter('./reports/' + 'model1' + '/log/test', sess.graph)
+            self.train_writer = tf.summary.FileWriter('./reports/' + 'model2' + '/log/train', sess.graph)
+            self.test_writer = tf.summary.FileWriter('./reports/' + 'model2' + '/log/test', sess.graph)
 
             if len(self.params['start_from']) > 1:
                 saver.restore(sess, self.params['start_from'])
             else:
+                print("INIT NETWORK")
                 sess.run(init)
             self.train_writer.flush()
             self.test_writer.flush()
 
             nodes = {'measured_snr': actual_snrdB, 'batch_size': batch_size, 'lr': lr, 'snr_db_min': snr_db_min,
                      'snr_db_max': snr_db_max, 'x': x, 'x_id': indices, 'H': H, 'y': y, 'sess': sess,
-                     'train': train_step, 'accuracy': acc_NN, 'loss': loss, 'mmse_accuracy': acc_mmse,
-                     'constellation': constellation, 'logs': helper, 'init': init,
+                     'train': train_step, 'accuracy': acc_NN, 'accuracy_last': acc_NN_last, 'loss': loss,
+                     'mmse_accuracy': acc_mmse, 'constellation': constellation, 'logs': helper, 'init': init,
                      'merged': merged}
         return nodes
 

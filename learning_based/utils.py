@@ -112,6 +112,12 @@ def demodulate(y, constellation):
     return indices
 
 
+def demodulate_raw(y, constellation):
+    y_ = tf.reshape(y, shape=[-1, 1])
+    constellation_ = tf.reshape(constellation, shape=[1, -1])
+    return tf.reshape(tf.abs(y_ - constellation_), shape=tf.shape(y))
+
+
 def accuracy(x, y):
     """Computes the fraction of elements for which x and y are equal"""
     return tf.reduce_mean(tf.cast(tf.equal(x, y), tf.float32))

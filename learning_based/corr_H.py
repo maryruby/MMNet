@@ -5,8 +5,9 @@ import scipy
 
 def make_random_complex_matrix(Nt, Nr, Nsamples):
     """result shape is (Nsamples, Nr * Nt)"""
-    Hr = tf.random_normal(shape=[Nr * Nt, Nsamples], dtype=tf.float32)
-    Hi = tf.random_normal(shape=[Nr * Nt, Nsamples], dtype=tf.float32)
+    # add stddev = 1. / np.sqrt(2. * Nr) ?
+    Hr = tf.random_normal(shape=[Nr * Nt, Nsamples], stddev = 1. / np.sqrt(2. * Nr), dtype=tf.float32)
+    Hi = tf.random_normal(shape=[Nr * Nt, Nsamples], stddev = 1. / np.sqrt(2. * Nr), dtype=tf.float32)
     return Hr, Hi
 
 
@@ -20,10 +21,10 @@ def make_temporal_correlations(Nsamples):
 
 def make_cross_antenna_correlations(Nt, Nr):
     alpha = 0.3
-    Rtx = np.power(alpha, (np.arange(Nt) / (Nt - 1.)) ** 2)
+    Rtx = np.power(alpha, (np.arange(Nt) / (2)) ** 2)
     RTX = scipy.linalg.toeplitz(Rtx)
-    beta = 0.9
-    Rrx = np.power(beta, (np.arange(Nr) / (Nr - 1.)) ** 2)
+    beta = 0.3
+    Rrx = np.power(beta, (np.arange(Nr) / (2)) ** 2)
     RRX = scipy.linalg.toeplitz(Rrx)
     return np.kron(RTX, RRX)
 

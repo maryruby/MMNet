@@ -4,6 +4,13 @@ import tensorflow.compat.v1 as tf
 from corr_H import generate_correlated_matrix
 
 
+def QAM_N_const_(n):
+    constellation = np.linspace(-np.sqrt(n) + 1, np.sqrt(n) - 1, int(np.sqrt(n)))
+    alpha = np.sqrt((constellation ** 2).mean())
+    constellation /= (alpha * np.sqrt(2))
+    return constellation
+
+
 class generator(object):
     def __init__(self, params, batch_size):
         modulation = params['modulation']
@@ -24,8 +31,7 @@ class generator(object):
 
         if self.mod_scheme == 'QAM':
             self.mod_n = int(modulation.split('_')[1])
-            # TODO(mary): this is bug! use elif instead of if below
-        if self.mod_scheme == 'MIX':
+        elif self.mod_scheme == 'MIX':
             self.mod_n = int(modulation.split('_')[1])
         else:
             print("The modulation is not supported yet")
@@ -108,6 +114,7 @@ class generator(object):
         # Channel Matrix
         if dataset_flag:
             H = H
+            self.Hdataset_powerdB = 0.
         elif use_correlated_H:
             print("correlated channels are generated")
             Hr, Hi = generate_correlated_matrix(self.NT, self.NR, self.n_samples)
